@@ -18,6 +18,7 @@
     const cloudBtn = $('#ex-save-cloud');
     const configured = !!(cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase && window.supabase.createClient);
     if (!configured) {
+      const tab = $('#rail-left [data-tab="library"]'); if (tab) tab.hidden = true;
       body.innerHTML = '<div class="section-title">Cloud library</div><div class="hint">Not configured. Add a <code>config.js</code> next to the app that sets <code>window.PDFWB_CONFIG = { supabaseUrl, supabaseAnonKey, bucket }</code>. The README explains the storage bucket and policies.</div>';
       return;
     }

@@ -242,10 +242,12 @@
   const measureCtx = document.createElement('canvas').getContext('2d');
   const accentColor = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0E7C86';
 
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+  const MAX_CANVAS_PX = isMobile ? 5e6 : 14e6;
   function outputScale(vp) {
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 2 : 3);
     const px = vp.width * vp.height * dpr * dpr;
-    return px > 14e6 ? Math.sqrt(14e6 / (vp.width * vp.height)) : dpr;
+    return px > MAX_CANVAS_PX ? Math.sqrt(MAX_CANVAS_PX / (vp.width * vp.height)) : dpr;
   }
 
   function computeZoom() {
@@ -732,7 +734,7 @@
     });
     ov.addEventListener('pointermove', (e) => {
       if (!drag) {
-        if (state.tool === 'select') {
+        if (state.tool === 'select' && e.pointerType !== 'touch') {
           const { p, vp, vx, vy, ux, uy } = toUser(e);
           const a = getSelectedAnnot();
           const h = a && state.selected.uid === p.uid ? handleAt(a, vp, vx, vy) : null;
@@ -775,6 +777,7 @@
     };
     ov.addEventListener('pointerup', finish);
     ov.addEventListener('pointercancel', finish);
+    ov.addEventListener('touchmove', (e) => { if (drag) e.preventDefault(); }, { passive: false });
     ov.addEventListener('dblclick', (e) => {
       if (state.tool !== 'select') return;
       const { p, ux, uy } = toUser(e);
@@ -2000,6 +2003,41 @@
     if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; dropOv.classList.remove('show');
     openFiles(e.dataTransfer.files, state.pages.length ? 'append' : 'replace');
   });
+
+  // Pinch to zoom the document on touch screens: scale the sheet while the fingers move, re-render on release.
+  const pinch = { pts: new Map(), active: false, d0: 1, z0: 1, scale: 1 };
+  const pinchTools = new Set(['select', 'textsel', 'text', 'place']);
+  viewer.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch' || !pinchTools.has(state.tool)) return;
+    pinch.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch.pts.size === 2 && !pinch.active) {
+      const [a, b] = [...pinch.pts.values()];
+      pinch.active = true; pinch.d0 = Math.hypot(a.x - b.x, a.y - b.y) || 1; pinch.z0 = state.zoom; pinch.scale = 1;
+      const r = viewer.getBoundingClientRect();
+      viewerInner.style.transformOrigin = `${(a.x + b.x) / 2 - r.left + viewer.scrollLeft}px ${(a.y + b.y) / 2 - r.top + viewer.scrollTop}px`;
+      viewerInner.classList.add('pinching');
+      selectAnnot(null);
+    }
+  }, true);
+  viewer.addEventListener('pointermove', (e) => {
+    if (!pinch.active || !pinch.pts.has(e.pointerId)) return;
+    pinch.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const [a, b] = [...pinch.pts.values()];
+    pinch.scale = clamp((Math.hypot(a.x - b.x, a.y - b.y) || 1) / pinch.d0, 0.1 / pinch.z0, 8 / pinch.z0);
+    viewerInner.style.transform = `scale(${pinch.scale})`;
+  }, true);
+  const pinchEnd = (e) => {
+    if (e.pointerType !== 'touch') return;
+    pinch.pts.delete(e.pointerId);
+    if (pinch.active && pinch.pts.size < 2) {
+      pinch.active = false; pinch.pts.clear();
+      viewerInner.style.transform = ''; viewerInner.style.transformOrigin = ''; viewerInner.classList.remove('pinching');
+      if (Math.abs(pinch.scale - 1) > 0.02) setZoom(clamp(pinch.z0 * pinch.scale, 0.1, 8));
+    }
+  };
+  viewer.addEventListener('pointerup', pinchEnd, true);
+  viewer.addEventListener('pointercancel', pinchEnd, true);
+  viewer.addEventListener('touchmove', (e) => { if (pinch.active) e.preventDefault(); }, { passive: false });
 
   // Zoom with ctrl/cmd + wheel, relayout on resize
   viewer.addEventListener('wheel', (e) => { if (!(e.ctrlKey || e.metaKey)) return; e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.1 : 1 / 1.1); }, { passive: false });

@@ -93,6 +93,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
+button, .thumb, .tab { -webkit-tap-highlight-color: transparent; }
+.rail, .panel-scroll { overscroll-behavior: contain; }
 :focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .muted { color: var(--ink-3); }
@@ -330,7 +332,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   position: relative; overflow: auto; min-width: 0; min-height: 0;
   background: var(--desk);
   scroll-behavior: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
 }
+.viewer-inner.pinching { will-change: transform; }
 .viewer-inner {
   display: flex; flex-direction: column; align-items: center; gap: 22px;
   padding: 22px 16px 70px;
@@ -344,7 +350,14 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 }
 .page .pg-canvas { position: absolute; left: 0; top: 0; display: block; }
 .page .pg-hl { position: absolute; left: 0; top: 0; pointer-events: none; mix-blend-mode: multiply; }
-.page .pg-overlay { position: absolute; left: 0; top: 0; touch-action: none; }
+.page .pg-overlay { position: absolute; left: 0; top: 0; touch-action: pan-x pan-y; }
+/* Drawing tools need the whole gesture; every other tool leaves scrolling to the browser. */
+.viewer[data-tool="ink"] .pg-overlay,
+.viewer[data-tool="highlight"] .pg-overlay,
+.viewer[data-tool="rect"] .pg-overlay,
+.viewer[data-tool="ellipse"] .pg-overlay,
+.viewer[data-tool="arrow"] .pg-overlay,
+.viewer[data-tool="whiteout"] .pg-overlay { touch-action: none; }
 .page .pg-label {
   position: absolute; left: 0; bottom: -19px;
   font: 11px var(--font-mono); color: var(--ink-3); pointer-events: none;
