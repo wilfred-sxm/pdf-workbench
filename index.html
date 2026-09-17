@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PDF Workbench</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500&family=Dancing+Script:wght@500&family=Great+Vibes&family=Homemade+Apple&display=swap">
+<link rel="stylesheet" href="styles.css">
+<meta name="description" content="PDF Workbench: read, search, annotate, sign, fill forms, merge, split, reorder, rotate and export PDFs entirely in your browser.">
+<meta name="color-scheme" content="light dark">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 11h18"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></symbol>
+    <symbol id="i-zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></symbol>
+    <symbol id="i-zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-panel-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+    <symbol id="i-panel-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></symbol>
+    <symbol id="i-cursor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 3l14 8-6.5 1.5L10 19z"/></symbol>
+    <symbol id="i-ibeam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 4h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H9M15 4h-2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h2M7 12h4M13 12h4"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c2-6 6-10 11-14l3 3c-4 5-8 9-14 11z"/><path d="m14 7 3 3"/></symbol>
+    <symbol id="i-highlight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 15-4 4H3l2-6 9-9 4 4z"/><path d="M12 6l4 4"/><path d="M3 21h18"/></symbol>
+    <symbol id="i-rect" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="6" width="16" height="12" rx="1"/></symbol>
+    <symbol id="i-ellipse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="12" rx="8" ry="6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M10 5h9v9"/></symbol>
+    <symbol id="i-whiteout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 15l8-8 6 6-5 5H8z"/><path d="M4 20h16"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></symbol>
+    <symbol id="i-sign" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3 0 3-6 6-6s2 6 5 6 2-4 4-4"/><path d="M3 21h18"/></symbol>
+    <symbol id="i-rot-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10a8 8 0 1 1 2.3 5.7"/><path d="M3 4v6h6"/></symbol>
+    <symbol id="i-rot-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10a8 8 0 1 0-2.3 5.7"/><path d="M21 4v6h-6"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-extract" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9"/><path d="M14 3v6h6"/><path d="M21 3l-7 6"/></symbol>
+    <symbol id="i-blank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/></symbol>
+    <symbol id="i-insert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 18h16"/><path d="M12 9v6M9 12h6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 6-6 6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 10 6 6 6-6"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 6 6 6-6 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-reverse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v13M7 17l-3-3M7 17l3-3M17 20V7M17 7l-3 3M17 7l3 3"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></symbol>
+    <symbol id="i-select-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></symbol>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <button class="btn icon ghost rail-toggle" id="btn-rail-left" title="Pages panel" aria-label="Toggle pages panel"><svg><use href="#i-panel-l"/></svg></button>
+    <div class="brand"><div class="brand-mark">PDF</div><span>Workbench</span></div>
+    <div class="sep"></div>
+    <button class="btn" id="btn-open" title="Open PDF or images (⌘O)"><svg><use href="#i-open"/></svg><span class="hide-narrow">Open</span></button>
+    <button class="btn" id="btn-add" title="Add files to the end of this document (merge)"><svg><use href="#i-plus"/></svg><span class="hide-narrow">Add</span></button>
+    <div class="sep"></div>
+    <button class="btn icon" id="btn-undo" title="Undo (⌘Z)" disabled><svg><use href="#i-undo"/></svg></button>
+    <button class="btn icon" id="btn-redo" title="Redo (⇧⌘Z)" disabled><svg><use href="#i-redo"/></svg></button>
+    <div class="sep hide-narrow"></div>
+    <div class="search-box" title="Search text in the document (Enter)">
+      <svg><use href="#i-search"/></svg>
+      <input id="search-input" type="search" placeholder="Search text…" autocomplete="off" spellcheck="false" aria-label="Search text">
+      <span class="count" id="search-count"></span>
+      <button class="btn icon ghost sm" id="search-prev" title="Previous match (⇧Enter)"><svg><use href="#i-up"/></svg></button>
+      <button class="btn icon ghost sm" id="search-next" title="Next match (Enter)"><svg><use href="#i-down"/></svg></button>
+    </div>
+    <div class="grow"></div>
+    <div class="zoom-group">
+      <button class="btn icon" id="btn-zoom-out" title="Zoom out (⌘−)"><svg><use href="#i-zoom-out"/></svg></button>
+      <select class="zoom-val" id="zoom-select" aria-label="Zoom level">
+        <option value="fit-width">Fit width</option>
+        <option value="fit-page">Fit page</option>
+        <option value="0.5">50%</option>
+        <option value="0.75">75%</option>
+        <option value="1">100%</option>
+        <option value="1.25">125%</option>
+        <option value="1.5">150%</option>
+        <option value="2">200%</option>
+        <option value="3">300%</option>
+        <option value="4">400%</option>
+      </select>
+      <button class="btn icon" id="btn-zoom-in" title="Zoom in (⌘+)"><svg><use href="#i-zoom-in"/></svg></button>
+    </div>
+    <div class="sep hide-narrow"></div>
+    <div class="page-nav">
+      <button class="btn icon ghost" id="btn-prev-page" title="Previous page"><svg><use href="#i-prev"/></svg></button>
+      <input class="input mono" id="page-input" type="text" inputmode="numeric" value="1" aria-label="Current page">
+      <span class="total muted">/ <span id="page-total">0</span></span>
+      <button class="btn icon ghost" id="btn-next-page" title="Next page"><svg><use href="#i-next"/></svg></button>
+    </div>
+    <div class="sep"></div>
+    <button class="btn primary" id="btn-export" title="Export the document as PDF (⌘S)"><svg><use href="#i-download"/></svg><span class="hide-narrow">Export</span></button>
+    <button class="btn icon ghost rail-toggle" id="btn-rail-right" title="Tools panel" aria-label="Toggle tools panel"><svg><use href="#i-panel-r"/></svg></button>
+  </header>
+
+  <!-- ================= Left rail ================= -->
+  <aside class="rail rail-left" id="rail-left">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="pages" role="tab">Pages</button>
+      <button class="tab" data-tab="files" role="tab">Files</button>
+      <button class="tab" data-tab="search" role="tab">Search</button>
+    </div>
+
+    <section class="panel active" data-panel="pages">
+      <div class="panel-tools">
+        <button class="btn icon sm" id="pg-rot-l" title="Rotate left"><svg><use href="#i-rot-l"/></svg></button>
+        <button class="btn icon sm" id="pg-rot-r" title="Rotate right"><svg><use href="#i-rot-r"/></svg></button>
+        <button class="btn icon sm" id="pg-up" title="Move up"><svg><use href="#i-up"/></svg></button>
+        <button class="btn icon sm" id="pg-down" title="Move down"><svg><use href="#i-down"/></svg></button>
+        <button class="btn icon sm" id="pg-dup" title="Duplicate"><svg><use href="#i-copy"/></svg></button>
+        <button class="btn icon sm" id="pg-blank" title="Insert blank page after"><svg><use href="#i-blank"/></svg></button>
+        <button class="btn icon sm" id="pg-insert" title="Insert a PDF after this page"><svg><use href="#i-insert"/></svg></button>
+        <button class="btn icon sm" id="pg-extract" title="Extract pages to a new PDF"><svg><use href="#i-extract"/></svg></button>
+        <button class="btn icon sm" id="pg-reverse" title="Reverse page order"><svg><use href="#i-reverse"/></svg></button>
+        <button class="btn icon sm" id="pg-all" title="Select all pages (⌘A)"><svg><use href="#i-select-all"/></svg></button>
+        <button class="btn icon sm danger" id="pg-del" title="Delete pages (⌫)"><svg><use href="#i-trash"/></svg></button>
+      </div>
+      <div class="panel-scroll" id="thumb-scroll" tabindex="0" aria-label="Page thumbnails">
+        <div class="thumb-grid" id="thumb-grid"></div>
+      </div>
+      <div class="section hint" id="pages-hint">Click to select · ⇧/⌘ for multiple · drag to reorder</div>
+    </section>
+
+    <section class="panel" data-panel="files">
+      <div class="panel-tools">
+        <button class="btn sm" id="files-add"><svg><use href="#i-plus"/></svg>Add files</button>
+        <span class="hint">Pages are appended; reorder them in the Pages tab.</span>
+      </div>
+      <div class="panel-scroll"><div class="file-list" id="file-list"></div></div>
+    </section>
+
+    <section class="panel" data-panel="search">
+      <div class="panel-scroll">
+        <div class="result-list" id="result-list"></div>
+        <div class="section hint" id="search-hint">Type in the search box and press Enter.</div>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ================= Viewer ================= -->
+  <main class="viewer" id="viewer" data-tool="select">
+    <div class="viewer-inner" id="viewer-inner"></div>
+    <div class="empty-desk" id="empty-desk" hidden>
+      <div class="card">
+        <h2>Drop PDFs or images here</h2>
+        <p>Files stay in this browser. Nothing is uploaded.</p>
+        <button class="btn primary" id="empty-open">Open files</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= Right rail ================= -->
+  <aside class="rail rail-right" id="rail-right">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="annotate" role="tab">Annotate</button>
+      <button class="tab" data-tab="document" role="tab">Document</button>
+      <button class="tab" data-tab="forms" role="tab">Forms</button>
+    </div>
+
+    <section class="panel active" data-panel="annotate">
+      <div class="panel-scroll">
+        <div class="section">
+          <div class="tool-grid" id="tool-grid">
+            <button class="tool-btn active" data-tool="select" title="Select and move annotations (V)"><svg><use href="#i-cursor"/></svg>Select</button>
+            <button class="tool-btn" data-tool="textsel" title="Select page text to copy (C)"><svg><use href="#i-ibeam"/></svg>Copy text</button>
+            <button class="tool-btn" data-tool="text" title="Add text (T)"><svg><use href="#i-text"/></svg>Text</button>
+            <button class="tool-btn" data-tool="ink" title="Draw freehand (P)"><svg><use href="#i-pen"/></svg>Draw</button>
+            <button class="tool-btn" data-tool="highlight" title="Highlight an area (H)"><svg><use href="#i-highlight"/></svg>Highlight</button>
+            <button class="tool-btn" data-tool="rect" title="Rectangle (R)"><svg><use href="#i-rect"/></svg>Box</button>
+            <button class="tool-btn" data-tool="ellipse" title="Ellipse (E)"><svg><use href="#i-ellipse"/></svg>Ellipse</button>
+            <button class="tool-btn" data-tool="arrow" title="Arrow (A)"><svg><use href="#i-arrow"/></svg>Arrow</button>
+            <button class="tool-btn" data-tool="whiteout" title="Cover an area with white (W). Note: this hides content visually; the underlying text stays in the file."><svg><use href="#i-whiteout"/></svg>Cover</button>
+            <button class="tool-btn" data-tool="image" title="Place an image (I)"><svg><use href="#i-image"/></svg>Image</button>
+          </div>
+        </div>
+
+        <div class="section" id="props-section">
+          <div class="section-title"><span id="props-title">Style</span><button class="btn sm danger" id="annot-delete" hidden>Delete</button></div>
+          <div class="stack" id="props-body"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><span>Signatures</span><button class="btn sm" id="sig-new"><svg><use href="#i-sign"/></svg>New</button></div>
+          <div class="sig-list" id="sig-list"></div>
+          <div class="hint" id="sig-hint">Create a signature, then click on the page to place it. Drag the corner to resize.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="document">
+      <div class="panel-scroll">
+        <div class="section">
+          <div class="section-title">Metadata</div>
+          <div class="field"><label for="md-title">Title</label><input class="input sm" id="md-title" type="text"></div>
+          <div class="field"><label for="md-author">Author</label><input class="input sm" id="md-author" type="text"></div>
+          <div class="field"><label for="md-subject">Subject</label><input class="input sm" id="md-subject" type="text"></div>
+          <div class="field"><label for="md-keywords">Keywords</label><input class="input sm" id="md-keywords" type="text" placeholder="comma, separated"></div>
+        </div>
+        <div class="section">
+          <div class="section-title"><span>Watermark</span><label class="check"><input type="checkbox" id="wm-on"> On</label></div>
+          <div class="field"><label for="wm-text">Text</label><input class="input sm" id="wm-text" type="text" value="CONFIDENTIAL"></div>
+          <div class="grid-3">
+            <div class="field"><label for="wm-size">Size</label><input class="input sm mono" id="wm-size" type="number" min="8" max="400" value="64"></div>
+            <div class="field"><label for="wm-angle">Angle</label><input class="input sm mono" id="wm-angle" type="number" min="-180" max="180" value="45"></div>
+            <div class="field"><label for="wm-color">Color</label><input class="input sm" id="wm-color" type="color" value="#B3261E"></div>
+          </div>
+          <div class="field"><label for="wm-opacity">Opacity <span class="mono" id="wm-opacity-val">15%</span></label><input id="wm-opacity" type="range" min="2" max="100" value="15"></div>
+        </div>
+        <div class="section">
+          <div class="section-title"><span>Page numbers</span><label class="check"><input type="checkbox" id="pn-on"> On</label></div>
+          <div class="grid-2">
+            <div class="field"><label for="pn-format">Format</label>
+              <select class="input sm" id="pn-format">
+                <option value="{n}">1</option>
+                <option value="{n} / {total}" selected>1 / 12</option>
+                <option value="Page {n}">Page 1</option>
+                <option value="Page {n} of {total}">Page 1 of 12</option>
+                <option value="- {n} -">- 1 -</option>
+              </select></div>
+            <div class="field"><label for="pn-position">Position</label>
+              <select class="input sm" id="pn-position">
+                <option value="bottom-center" selected>Bottom center</option>
+                <option value="bottom-right">Bottom right</option>
+                <option value="bottom-left">Bottom left</option>
+                <option value="top-center">Top center</option>
+                <option value="top-right">Top right</option>
+                <option value="top-left">Top left</option>
+              </select></div>
+          </div>
+          <div class="grid-3">
+            <div class="field"><label for="pn-size">Size</label><input class="input sm mono" id="pn-size" type="number" min="6" max="48" value="10"></div>
+            <div class="field"><label for="pn-margin">Margin</label><input class="input sm mono" id="pn-margin" type="number" min="4" max="200" value="28"></div>
+            <div class="field"><label for="pn-start">Start at</label><input class="input sm mono" id="pn-start" type="number" min="-999" max="9999" value="1"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Export</div>
+          <p class="hint" style="margin:0">Annotations, signatures, watermark and page numbers are baked into the exported file. Form fields are flattened.</p>
+          <button class="btn primary" id="btn-export-2"><svg><use href="#i-download"/></svg>Export PDF…</button>
+          <button class="btn" id="btn-export-text">Export page text (.txt)</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="forms">
+      <div class="panel-scroll">
+        <div id="forms-body" class="section"></div>
+      </div>
+    </section>
+  </aside>
+
+  <footer class="statusbar">
+    <span id="status-doc">No document</span>
+    <span class="grow" id="status-hint"></span>
+    <span class="mono" id="status-page"></span>
+  </footer>
+</div>
+
+<!-- ================= Dialogs ================= -->
+<dialog id="dlg-sign">
+  <form method="dialog">
+    <div class="dlg-head"><h2>New signature</h2><button class="btn icon ghost" type="submit" value="cancel" aria-label="Close"><svg><use href="#i-x"/></svg></button></div>
+    <div class="dlg-body">
+      <div class="sig-tabs">
+        <button class="tab active" type="button" data-sigtab="draw">Draw</button>
+        <button class="tab" type="button" data-sigtab="type">Type</button>
+        <button class="tab" type="button" data-sigtab="upload">Upload</button>
+      </div>
+      <div class="sig-pane active" data-sigpane="draw">
+        <div class="sig-line"><canvas class="sig-pad" id="sig-pad" width="600" height="190"></canvas></div>
+        <div class="row">
+          <div class="swatches" id="sig-colors">
+            <button class="swatch active" type="button" data-color="#1A237E" style="background:#1A237E" title="Blue-black"></button>
+            <button class="swatch" type="button" data-color="#111111" style="background:#111111" title="Black"></button>
+            <button class="swatch" type="button" data-color="#B3261E" style="background:#B3261E" title="Red"></button>
+          </div>
+          <div class="grow"></div>
+          <button class="btn sm" type="button" id="sig-clear">Clear</button>
+        </div>
+      </div>
+      <div class="sig-pane" data-sigpane="type">
+        <div class="row">
+          <div class="field"><label for="sig-text">Name</label><input class="input" id="sig-text" type="text" placeholder="Your name" autocomplete="name"></div>
+          <div class="field" style="flex:0 0 150px"><label for="sig-font">Style</label>
+            <select class="input" id="sig-font">
+              <option value="Caveat">Caveat</option>
+              <option value="Dancing Script" selected>Dancing Script</option>
+              <option value="Great Vibes">Great Vibes</option>
+              <option value="Homemade Apple">Homemade Apple</option>
+            </select></div>
+        </div>
+        <canvas class="sig-preview" id="sig-preview" width="600" height="130"></canvas>
+      </div>
+      <div class="sig-pane" data-sigpane="upload">
+        <input type="file" id="sig-file" accept="image/png,image/jpeg,image/webp" class="input" style="height:auto;padding:6px">
+        <label class="check"><input type="checkbox" id="sig-transparent" checked> Make white background transparent (for scanned signatures)</label>
+        <canvas class="sig-preview" id="sig-upload-preview" width="600" height="130"></canvas>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <span class="hint left">Signatures are kept in this browser only.</span>
+      <button class="btn" type="submit" value="cancel">Cancel</button>
+      <button class="btn primary" type="button" id="sig-save">Save &amp; place</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-export">
+  <form method="dialog">
+    <div class="dlg-head"><h2>Export PDF</h2><button class="btn icon ghost" type="submit" value="cancel" aria-label="Close"><svg><use href="#i-x"/></svg></button></div>
+    <div class="dlg-body">
+      <div class="field"><label for="ex-name">File name</label><input class="input" id="ex-name" type="text" value="document.pdf"></div>
+      <div class="field"><label>Pages</label>
+        <label class="check"><input type="radio" name="ex-scope" id="ex-scope-all" value="all" checked> All pages (<span id="ex-count-all">0</span>)</label>
+        <label class="check"><input type="radio" name="ex-scope" id="ex-scope-sel" value="selected"> Selected pages (<span id="ex-count-sel">0</span>)</label>
+      </div>
+      <label class="check"><input type="checkbox" id="ex-annots" checked> Include annotations and signatures</label>
+      <label class="check"><input type="checkbox" id="ex-deco" checked> Include watermark and page numbers (if enabled)</label>
+      <label class="check"><input type="checkbox" id="ex-flatten" checked> Flatten form fields (keeps filled values, removes interactivity)</label>
+      <p class="hint" id="ex-note" style="margin:0"></p>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn left" type="button" id="ex-png">Current page as PNG</button>
+      <button class="btn" type="submit" value="cancel">Cancel</button>
+      <button class="btn primary" type="button" id="ex-go"><svg><use href="#i-download"/></svg>Export</button>
+    </div>
+  </form>
+</dialog>
+
+<input type="file" id="file-input" accept="application/pdf,image/png,image/jpeg,image/webp" multiple hidden>
+<input type="file" id="image-input" accept="image/png,image/jpeg,image/webp" hidden>
+<div class="drop-overlay" id="drop-overlay">Drop to open</div>
+<div class="busy-bar" id="busy-bar"></div>
+<div class="toasts" id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
