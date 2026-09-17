@@ -44,6 +44,22 @@ Then open <http://localhost:8765>. The app starts with a generated three-page sa
 - Export the whole document or the selection as PDF, or the current page as PNG.
 - Undo / redo for every page and annotation operation.
 
+**Cloud library (optional, Supabase)**
+- Sign in with an email link, save the current document to a private Supabase Storage bucket, open or add saved documents from any device, download or delete them.
+- Configure it with a `config.js` next to `index.html`:
+
+```js
+window.PDFWB_CONFIG = {
+  supabaseUrl: 'https://<project-ref>.supabase.co',
+  supabaseAnonKey: '<publishable (anon) key>',
+  bucket: 'documents',
+  webUrl: 'https://<where the app is hosted>/',
+};
+```
+
+- Create the bucket and row-level policies once (SQL editor or migration): see `supabase/setup.sql`.
+- In Supabase Auth → URL configuration, set the Site URL to where the app is hosted and add it to the redirect allow-list, so the sign-in link returns to the app.
+
 ## Keyboard
 
 | Keys | Action |
@@ -70,5 +86,7 @@ Then open <http://localhost:8765>. The app starts with a generated three-page sa
 - `index.html` markup, dialogs and the icon set
 - `styles.css` theme tokens (light and dark), layout, components
 - `app.js` the application: sources, page model, viewer, annotation engine, search, forms, signatures, export
+- `cloud.js` the optional Supabase library (sign-in, save, open, delete); `config.js` holds the project URL and publishable key
+- `supabase/setup.sql` storage bucket and access policies
 
 `window.PDFWorkbench` exposes `state`, `buildPdf()`, `openFiles()` and `pdfjsLib` for scripting and debugging.

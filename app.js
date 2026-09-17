@@ -2008,7 +2008,8 @@
   window.addEventListener('beforeunload', (e) => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   // Debug handle (read-only use): window.PDFWorkbench.state, .buildPdf(), .pdfjsLib
-  window.PDFWorkbench = { state, buildPdf, openFiles, pdfjsLib, version: '1.0.0' };
+  window.PDFWorkbench = { state, buildPdf, openFiles, saveFile, toast, busy, baseName, showTab, pdfjsLib, version: '1.1.0' };
+  document.dispatchEvent(new CustomEvent('pdfwb:ready'));
 
   // ---------- Start ----------
   syncDocPanel(); renderSigList(); updateUndoUI(); setTool('select');

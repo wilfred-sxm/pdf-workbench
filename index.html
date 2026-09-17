@@ -105,6 +105,7 @@
       <button class="tab active" data-tab="pages" role="tab">Pages</button>
       <button class="tab" data-tab="files" role="tab">Files</button>
       <button class="tab" data-tab="search" role="tab">Search</button>
+      <button class="tab" data-tab="library" role="tab">Library</button>
     </div>
 
     <section class="panel active" data-panel="pages">
@@ -140,6 +141,10 @@
         <div class="result-list" id="result-list"></div>
         <div class="section hint" id="search-hint">Type in the search box and press Enter.</div>
       </div>
+    </section>
+
+    <section class="panel" data-panel="library">
+      <div class="panel-scroll"><div id="library-body" class="section"></div></div>
     </section>
   </aside>
 
@@ -326,7 +331,10 @@
       <p class="hint" id="ex-note" style="margin:0"></p>
     </div>
     <div class="dlg-foot">
-      <button class="btn left" type="button" id="ex-png">Current page as PNG</button>
+      <div class="left btn-row">
+        <button class="btn" type="button" id="ex-png">Current page as PNG</button>
+        <button class="btn" type="button" id="ex-save-cloud" hidden>Save to library</button>
+      </div>
       <button class="btn" type="submit" value="cancel">Cancel</button>
       <button class="btn primary" type="button" id="ex-go"><svg><use href="#i-download"/></svg>Export</button>
     </div>
@@ -340,6 +348,9 @@
 <div class="toasts" id="toasts"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 <script src="app.js"></script>
+<script src="cloud.js"></script>
 </body>
 </html>

@@ -306,6 +306,13 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 .badge.warn { background: var(--warn-soft); color: var(--warn); }
 .badge.ok { background: var(--accent-soft); color: var(--accent); }
 
+/* ---------- Cloud library ---------- */
+.lib-list { margin: 0 -14px; }
+.lib-item .actions .btn { height: 26px; }
+.lib-item .name { max-width: 100%; }
+#library-body code { font-family: var(--font-mono); font-size: 11.5px; background: var(--panel-2); padding: 1px 4px; border-radius: 3px; }
+#library-body a { color: var(--accent); }
+
 /* ---------- Search results ---------- */
 .result-list { display: flex; flex-direction: column; }
 .result {
