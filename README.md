@@ -22,7 +22,9 @@ Then open <http://localhost:8765>. The app starts with a generated three-page sa
 - Password-protected files can be opened (prompt); metadata is read from the file.
 
 **Pages**
-- Drag thumbnails to reorder (multi-select with ⇧ / ⌘ click), move up/down, reverse order.
+- Start in **Files**: drag a file card or use its up/down arrows to move all of its pages together. Expand **Show pages** to arrange the pages within that file.
+- Use **All pages** for a combined view and for moving pages between files. File cards show a notice when their pages are mixed with other files; moving that file brings its pages back together without changing their internal order.
+- Drag thumbnails to reorder (Shift-click for a range, ⌘/Ctrl-click for individual pages). A selected range moves together. **Select all** inside a file selects its pages; the page toolbar also offers up/down controls.
 - Rotate, duplicate, delete, insert blank pages, insert another PDF at a position.
 - Merge: **Add** appends any number of PDFs; PNG/JPEG/WebP images are added as pages.
 - Split: extract the selected pages to a new PDF.

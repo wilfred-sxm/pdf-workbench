@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PDF Workbench</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500&family=Dancing+Script:wght@500&family=Great+Vibes&family=Homemade+Apple&display=swap">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=1.2.0">
 <meta name="description" content="PDF Workbench: read, search, annotate, sign, fill forms, merge, split, reorder, rotate and export PDFs entirely in your browser.">
 <meta name="color-scheme" content="light dark">
 </head>
@@ -54,7 +54,7 @@
 
 <div class="app" id="app">
   <header class="topbar">
-    <button class="btn icon ghost rail-toggle" id="btn-rail-left" title="Pages panel" aria-label="Toggle pages panel"><svg><use href="#i-panel-l"/></svg></button>
+    <button class="btn icon ghost rail-toggle" id="btn-rail-left" title="Files and pages" aria-label="Toggle files and pages"><svg><use href="#i-panel-l"/></svg></button>
     <div class="brand"><div class="brand-mark">PDF</div><span>Workbench</span></div>
     <div class="sep"></div>
     <button class="btn" id="btn-open" title="Open PDF or images (⌘O)"><svg><use href="#i-open"/></svg><span class="hide-narrow">Open</span></button>
@@ -102,14 +102,13 @@
   <!-- ================= Left rail ================= -->
   <aside class="rail rail-left" id="rail-left">
     <div class="tabs" role="tablist">
-      <button class="tab active" data-tab="pages" role="tab">Pages</button>
-      <button class="tab" data-tab="files" role="tab">Files</button>
+      <button class="tab active" data-tab="files" role="tab" aria-selected="true">Files</button>
+      <button class="tab" data-tab="pages" role="tab" aria-selected="false">All pages</button>
       <button class="tab" data-tab="search" role="tab">Search</button>
       <button class="tab" data-tab="library" role="tab">Library</button>
     </div>
 
-    <section class="panel active" data-panel="pages">
-      <div class="panel-tools">
+      <div class="panel-tools" id="page-tools" aria-label="Selected page actions" hidden>
         <button class="btn icon sm" id="pg-rot-l" title="Rotate left"><svg><use href="#i-rot-l"/></svg></button>
         <button class="btn icon sm" id="pg-rot-r" title="Rotate right"><svg><use href="#i-rot-r"/></svg></button>
         <button class="btn icon sm" id="pg-up" title="Move up"><svg><use href="#i-up"/></svg></button>
@@ -122,18 +121,20 @@
         <button class="btn icon sm" id="pg-all" title="Select all pages (⌘A)"><svg><use href="#i-select-all"/></svg></button>
         <button class="btn icon sm danger" id="pg-del" title="Delete pages (⌫)"><svg><use href="#i-trash"/></svg></button>
       </div>
+    <section class="panel" data-panel="pages">
       <div class="panel-scroll" id="thumb-scroll" tabindex="0" aria-label="Page thumbnails">
         <div class="thumb-grid" id="thumb-grid"></div>
       </div>
       <div class="section hint" id="pages-hint">Click to select · ⇧/⌘ for multiple · drag to reorder</div>
     </section>
 
-    <section class="panel" data-panel="files">
+    <section class="panel active" data-panel="files">
       <div class="panel-tools">
         <button class="btn sm" id="files-add"><svg><use href="#i-plus"/></svg>Add files</button>
-        <span class="hint">Pages are appended; reorder them in the Pages tab.</span>
+        <span class="hint" id="files-count"></span>
       </div>
-      <div class="panel-scroll"><div class="file-list" id="file-list"></div></div>
+      <div class="panel-scroll" id="file-scroll" tabindex="0" aria-label="Files and their pages"><div class="file-list" id="file-list"></div></div>
+      <div class="section hint" id="files-hint" role="status">Drag files to reorder. Expand a file to arrange its pages.</div>
     </section>
 
     <section class="panel" data-panel="search">
@@ -350,7 +351,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=1.2.0"></script>
 <script src="cloud.js"></script>
 </body>
 </html>

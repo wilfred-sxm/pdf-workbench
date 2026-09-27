@@ -166,7 +166,9 @@
         syncDocPanel();
         state.current = 0;
       }
+      if (mode === 'replace') expandedFiles.clear();
       rebuild();
+      showTab('rail-left', 'files');
       if (mode === 'replace') { viewer.scrollTop = 0; state.dirty = false; }
       const n = added.reduce((s, x) => s + x.pageCount, 0);
       toast(`${mode === 'replace' ? 'Opened' : 'Added'} ${added.length} file${added.length > 1 ? 's' : ''} · ${n} page${n !== 1 ? 's' : ''}`);
@@ -344,8 +346,8 @@
     state.current = clamp(state.current, 0, Math.max(0, state.pages.length - 1));
     layout();
     for (const el of pageEls.values()) if (el._st.visible) drawOverlay(el);
-    rebuildThumbs();
     refreshFiles();
+    rebuildThumbs();
     refreshForms();
     updatePageUI();
     updateCounts();
@@ -996,46 +998,86 @@
   // =====================================================================
   //  Page thumbnails, selection, drag-to-reorder and page operations
   // =====================================================================
-  const thumbGrid = $('#thumb-grid'), thumbScroll = $('#thumb-scroll');
+  const thumbGrid = $('#thumb-grid'), thumbScroll = $('#thumb-scroll'), fileScroll = $('#file-scroll');
   const thumbEls = new Map(); const thumbCache = new Map();
-  let dragUid = null;
+  const expandedFiles = new Set();
+  const fileGrids = new Map();
+  let dragUids = [], dragFileId = null, dragBadge = null;
+  let pointerDrag = null, suppressOrganizerClick = false;
+  const inFilesTab = () => $('#rail-left .tab.active').dataset.tab === 'files';
   const thumbIO = new IntersectionObserver((entries) => {
     for (const e of entries) { e.target._visible = e.isIntersecting; if (e.isIntersecting) queueThumb(e.target); }
-  }, { root: thumbScroll, rootMargin: '400px 0px' });
+  }, { root: $('#rail-left'), rootMargin: '400px 0px' });
+
+  function scrollDuringDrag(e) {
+    const scroll = inFilesTab() ? fileScroll : thumbScroll;
+    const r = scroll.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    if (e.clientY < r.top + 48) scroll.scrollTop -= 18;
+    else if (e.clientY > r.bottom - 48) scroll.scrollTop += 18;
+  }
+  function endOrganizerDrag() {
+    dragUids = []; dragFileId = null;
+    dragBadge?.remove(); dragBadge = null;
+    $$('.dragging', $('#rail-left')).forEach((el) => el.classList.remove('dragging'));
+    clearDropMarks();
+  }
+  function canDropPages(p) {
+    return dragUids.length && (!inFilesTab() || dragUids.every((u) => pageByUid(u)?.srcId === p.srcId));
+  }
 
   function createThumb(p) {
     const t = document.createElement('div');
-    t.className = 'thumb'; t.draggable = true; t.dataset.uid = p.uid; t.tabIndex = -1;
+    t.className = 'thumb'; t.draggable = true; t.dataset.uid = p.uid; t.tabIndex = 0;
+    t.setAttribute('role', 'option');
     t.innerHTML = '<canvas></canvas><div class="thumb-num"></div><span class="thumb-rot" hidden></span>';
     thumbIO.observe(t);
     t.addEventListener('click', (e) => onThumbClick(p.uid, e));
-    t.addEventListener('dragstart', (e) => {
-      if (!state.selection.has(p.uid)) { state.selection = new Set([p.uid]); state.anchorUid = p.uid; syncSelectionUI(); }
-      e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/x-pdfwb-page', p.uid);
-      dragUid = p.uid; t.classList.add('dragging');
+    t.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onThumbClick(p.uid, e); }
     });
-    t.addEventListener('dragend', () => { dragUid = null; t.classList.remove('dragging'); clearDropMarks(); });
+    t.addEventListener('dragstart', (e) => {
+      if (pointerDrag) { e.preventDefault(); return; }
+      e.stopPropagation();
+      // Shift-drag must extend the range before the browser starts dragging.
+      if (e.shiftKey) onThumbClick(p.uid, e);
+      if (!state.selection.has(p.uid)) { state.selection = new Set([p.uid]); state.anchorUid = p.uid; syncSelectionUI(); }
+      if (inFilesTab() && orderedSelection().some((u) => pageByUid(u).srcId !== pageByUid(p.uid).srcId)) {
+        e.preventDefault(); toast('Use All pages to move a selection from different files.'); return;
+      }
+      e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/x-pdfwb-page', p.uid);
+      dragUids = orderedSelection();
+      for (const u of dragUids) thumbEls.get(u)?.classList.add('dragging');
+      if (dragUids.length > 1) {
+        dragBadge = document.createElement('div'); dragBadge.className = 'drag-count';
+        dragBadge.textContent = `${dragUids.length} pages`; document.body.append(dragBadge);
+        e.dataTransfer.setDragImage(dragBadge, 20, 20);
+      }
+    });
+    t.addEventListener('dragend', endOrganizerDrag);
     t.addEventListener('dragover', (e) => {
-      if (!dragUid) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      if (!canDropPages(pageByUid(p.uid))) return; e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'move';
       const r = t.getBoundingClientRect(); const before = e.clientX - r.left < r.width / 2;
       clearDropMarks(); t.classList.add(before ? 'drop-before' : 'drop-after');
+      scrollDuringDrag(e);
     });
     t.addEventListener('drop', (e) => {
-      if (!dragUid) return; e.preventDefault(); e.stopPropagation();
+      if (!canDropPages(pageByUid(p.uid))) return; e.preventDefault(); e.stopPropagation();
       const r = t.getBoundingClientRect(); const before = e.clientX - r.left < r.width / 2;
       const idx = indexOfUid(p.uid) + (before ? 0 : 1);
-      clearDropMarks(); movePages(orderedSelection(), idx);
+      const moving = [...dragUids]; endOrganizerDrag(); movePages(moving, idx);
     });
     return t;
   }
-  thumbGrid.addEventListener('dragover', (e) => { if (dragUid) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } });
-  thumbGrid.addEventListener('drop', (e) => { if (!dragUid) return; e.preventDefault(); clearDropMarks(); movePages(orderedSelection(), state.pages.length); });
-  function clearDropMarks() { for (const t of thumbEls.values()) t.classList.remove('drop-before', 'drop-after'); }
+  thumbGrid.addEventListener('dragover', (e) => { if (dragUids.length) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; scrollDuringDrag(e); } });
+  thumbGrid.addEventListener('drop', (e) => { if (!dragUids.length) return; e.preventDefault(); const moving = [...dragUids]; endOrganizerDrag(); movePages(moving, state.pages.length); });
+  function clearDropMarks() { $$('.drop-before, .drop-after', $('#rail-left')).forEach((el) => el.classList.remove('drop-before', 'drop-after')); }
 
   function onThumbClick(u, e) {
     if (e.shiftKey && state.anchorUid && pageByUid(state.anchorUid)) {
       const a = indexOfUid(state.anchorUid), b = indexOfUid(u); const [s, t] = a < b ? [a, b] : [b, a];
-      state.selection = new Set(state.pages.slice(s, t + 1).map((p) => p.uid));
+      const srcId = pageByUid(u).srcId;
+      state.selection = new Set(state.pages.slice(s, t + 1).filter((p) => !inFilesTab() || p.srcId === srcId).map((p) => p.uid));
     } else if (e.metaKey || e.ctrlKey) {
       if (state.selection.has(u)) state.selection.delete(u); else state.selection.add(u);
       state.anchorUid = u;
@@ -1045,23 +1087,39 @@
     syncSelectionUI();
   }
   function syncSelectionUI() {
-    for (const [u, t] of thumbEls) t.classList.toggle('selected', state.selection.has(u));
+    for (const [u, t] of thumbEls) { t.classList.toggle('selected', state.selection.has(u)); t.setAttribute('aria-selected', String(state.selection.has(u))); }
     const n = state.selection.size;
-    $('#pages-hint').textContent = n > 1 ? `${n} pages selected · actions apply to the selection` : n === 1 ? '1 page selected · ⇧/⌘-click for more · drag to reorder' : 'Click to select · ⇧/⌘ for multiple · drag to reorder';
+    const modifier = isMac ? '⌘' : 'Ctrl';
+    const selectedHint = `${n} page${n === 1 ? '' : 's'} selected · drag the selection or use the arrows above`;
+    $('#pages-hint').textContent = n ? selectedHint : `Click to select · Shift/${modifier} for multiple · drag to reorder`;
+    $('#files-hint').textContent = n ? selectedHint : 'Drag files to reorder. Expand a file to arrange its pages.';
+    const tab = $('#rail-left .tab.active').dataset.tab;
+    const hasExpandedFile = [...expandedFiles].some((id) => fileGrids.has(id));
+    $('#page-tools').hidden = tab !== 'pages' && !(tab === 'files' && (n || hasExpandedFile));
+    $$('.file-card').forEach((card) => {
+      const pages = state.pages.filter((p) => p.srcId === card.dataset.srcId);
+      card.classList.toggle('selected', pages.length > 0 && pages.every((p) => state.selection.has(p.uid)));
+    });
     $('#ex-count-sel').textContent = n;
   }
 
   function rebuildThumbs() {
     const keep = new Set(); const frag = document.createDocumentFragment();
+    const grouped = inFilesTab();
+    for (const grid of fileGrids.values()) grid.replaceChildren();
+    thumbGrid.replaceChildren();
+    thumbGrid.setAttribute('role', 'listbox'); thumbGrid.setAttribute('aria-label', 'All pages'); thumbGrid.setAttribute('aria-multiselectable', 'true');
     state.pages.forEach((p, i) => {
       let t = thumbEls.get(p.uid);
       if (!t) { t = createThumb(p); thumbEls.set(p.uid, t); }
       t.dataset.index = i;
-      t.querySelector('.thumb-num').textContent = i + 1;
+      t.querySelector('.thumb-num').innerHTML = `${i + 1}${grouped ? '' : `<span class="thumb-source">${esc(srcOf(p).name)}</span>`}`;
+      t.setAttribute('aria-label', `Page ${i + 1}, ${srcOf(p).name}, original page ${p.srcPage + 1}`);
+      t.title = `${srcOf(p).name} · original page ${p.srcPage + 1}`;
       t.classList.toggle('current', i === state.current);
       const rotEl = t.querySelector('.thumb-rot'); rotEl.hidden = !p.rotation; rotEl.textContent = p.rotation + '°';
       if (t.dataset.key !== pageKey(p)) { t.dataset.key = pageKey(p); t._dirty = true; }
-      keep.add(p.uid); frag.appendChild(t);
+      keep.add(p.uid); (grouped ? fileGrids.get(p.srcId) : frag).appendChild(t);
     });
     for (const [u, t] of thumbEls) if (!keep.has(u)) { thumbIO.unobserve(t); t.remove(); thumbEls.delete(u); }
     thumbGrid.replaceChildren(frag);
@@ -1113,7 +1171,10 @@
     const before = state.pages.slice(0, toIndex).filter((p) => !set.has(p.uid)).length;
     const next = [...rest.slice(0, before), ...moving, ...rest.slice(before)];
     if (next.every((p, i) => p === state.pages[i])) return;
-    commit(); state.pages = next; rebuild();
+    const currentUid = currentPage()?.uid;
+    commit(); state.pages = next;
+    state.current = Math.max(0, indexOfUid(currentUid));
+    rebuild(); goToPage(state.current);
   }
   function rotatePages(uids, delta) {
     if (!uids.length) return; commit();
@@ -1188,7 +1249,13 @@
     for (const [u, t] of thumbEls) t.classList.toggle('current', indexOfUid(u) === i);
     const p = currentPage();
     if (p) {
-      const t = thumbEls.get(p.uid); if (t && t.isConnected) t.scrollIntoView({ block: 'nearest' });
+      const t = thumbEls.get(p.uid);
+      if (t && t.isConnected && t.getClientRects().length && !dragUids.length && !dragFileId) {
+        const scroll = inFilesTab() ? fileScroll : thumbScroll;
+        const r = t.getBoundingClientRect(), bounds = scroll.getBoundingClientRect();
+        if (r.top < bounds.top) scroll.scrollTop += r.top - bounds.top;
+        else if (r.bottom > bounds.bottom) scroll.scrollTop += r.bottom - bounds.bottom;
+      }
       const v = vpFor(p, 1);
       $('#status-page').textContent = `${paperName(v.width, v.height)} · ${Math.round(v.width)} × ${Math.round(v.height)} pt · ${ptToMm(v.width)} × ${ptToMm(v.height)} mm`;
     } else $('#status-page').textContent = '';
@@ -1203,21 +1270,192 @@
   }
 
   // ---------- Files panel ----------
-  function refreshFiles() {
-    const list = $('#file-list'); list.replaceChildren();
-    const counts = new Map();
-    for (const p of state.pages) counts.set(p.srcId, (counts.get(p.srcId) || 0) + 1);
-    if (!counts.size) { list.innerHTML = '<div class="thumb-empty">No files open.</div>'; return; }
-    for (const [id, n] of counts) {
-      const s = state.sources.get(id);
-      const el = document.createElement('div'); el.className = 'file-item';
-      el.innerHTML = `<div class="name" title="${esc(s.name)}">${esc(s.name)}</div>
-        <div class="meta">${n} of ${s.pageCount} pages · ${fmtSize(s.size)}${s.hasForm ? ' <span class="badge ok">FORM</span>' : ''}${s.libError ? ' <span class="badge warn" title="This file could not be parsed for editing (encrypted or damaged). Its pages are exported as images.">RASTER</span>' : ''}</div>
-        <div class="actions"><button class="btn icon sm danger" title="Remove all pages from this file"><svg><use href="#i-trash"/></svg></button></div>`;
-      el.querySelector('button').onclick = () => deletePages(state.pages.filter((p) => p.srcId === id).map((p) => p.uid));
-      list.append(el);
+  function filePages(id) { return state.pages.filter((p) => p.srcId === id); }
+  function fileOrder() { return [...new Set(state.pages.map((p) => p.srcId))]; }
+  function moveFile(id, targetId, after = false) {
+    if (id === targetId) return;
+    const moving = filePages(id).map((p) => p.uid);
+    const target = filePages(targetId);
+    const at = target.length ? indexOfUid(target[after ? target.length - 1 : 0].uid) + (after ? 1 : 0) : state.pages.length;
+    movePages(moving, at);
+  }
+  function moveFileBy(id, dir) {
+    const ids = fileOrder(), at = ids.indexOf(id), target = ids[at + dir];
+    if (target) {
+      moveFile(id, target, dir > 0);
+      $(`.file-card[data-src-id="${id}"] [data-move="${dir}"]`)?.focus({ preventScroll: true });
     }
   }
+  function refreshFiles() {
+    const list = $('#file-list'); list.replaceChildren(); fileGrids.clear();
+    const ids = fileOrder();
+    $('#files-count').textContent = `${ids.length} file${ids.length === 1 ? '' : 's'} · ${state.pages.length} pages`;
+    if (!ids.length) { list.innerHTML = '<div class="thumb-empty">No files yet.<br>Add PDFs to arrange them here.</div>'; return; }
+    ids.forEach((id, order) => {
+      const s = state.sources.get(id);
+      const pages = filePages(id), uids = pages.map((p) => p.uid), n = pages.length;
+      const ranges = pageRangeLabel(uids);
+      const scattered = indexOfUid(uids[n - 1]) - indexOfUid(uids[0]) + 1 !== n;
+      const expanded = expandedFiles.has(id);
+      const el = document.createElement('section'); el.className = 'file-card'; el.dataset.srcId = id;
+      el.setAttribute('aria-label', s.name);
+      el.innerHTML = `<div class="file-head" draggable="true" title="Drag to move all ${n} pages in ${esc(s.name)}">
+          <span class="file-grip" aria-hidden="true"></span><span class="file-order">${order + 1}</span>
+          <div class="file-title"><div class="file-name" title="${esc(s.name)}">${esc(s.name)}</div>
+          <div class="file-meta">${n} page${n === 1 ? '' : 's'} · ${fmtSize(s.size)}${s.hasForm ? ' <span class="badge ok">FORM</span>' : ''}${s.libError ? ' <span class="badge warn">RASTER</span>' : ''}</div></div>
+        </div>
+        <div class="file-actions">
+          <button class="btn ghost sm file-toggle" aria-expanded="${expanded}" aria-controls="file-pages-${id}" aria-label="${expanded ? 'Hide' : 'Show'} pages in ${esc(s.name)}"><svg><use href="#i-down"/></svg><span>${expanded ? 'Hide' : 'Show'} pages</span></button>
+          <button class="btn icon sm" data-move="-1" ${order === 0 ? 'disabled' : ''} title="Move file up" aria-label="Move ${esc(s.name)} up"><svg><use href="#i-up"/></svg></button>
+          <button class="btn icon sm" data-move="1" ${order === ids.length - 1 ? 'disabled' : ''} title="Move file down" aria-label="Move ${esc(s.name)} down"><svg><use href="#i-down"/></svg></button>
+          <button class="btn icon sm danger file-remove" title="Remove file" aria-label="Remove ${esc(s.name)}"><svg><use href="#i-trash"/></svg></button>
+        </div>
+        ${scattered ? '<div class="file-note">Pages are mixed with other files. Moving this file brings its pages together.</div>' : ''}
+        <div class="file-pages" id="file-pages-${id}" ${expanded ? '' : 'hidden'}>
+          <div class="file-pages-bar"><span class="hint" title="Pages in the combined PDF">Page${n === 1 ? '' : 's'} ${ranges}</span><button class="btn ghost sm file-select" aria-label="Select all pages in ${esc(s.name)}">Select all</button></div>
+          <div class="thumb-grid" role="listbox" aria-label="Pages in ${esc(s.name)}" aria-multiselectable="true"></div>
+        </div>`;
+      const toggle = el.querySelector('.file-toggle'), contents = el.querySelector('.file-pages');
+      toggle.onclick = () => {
+        const open = !expandedFiles.has(id);
+        if (open) expandedFiles.add(id); else expandedFiles.delete(id);
+        contents.hidden = !open; toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', `${open ? 'Hide' : 'Show'} pages in ${s.name}`);
+        toggle.querySelector('span').textContent = `${open ? 'Hide' : 'Show'} pages`;
+        syncSelectionUI();
+      };
+      el.querySelector('.file-select').onclick = () => {
+        state.selection = new Set(filePages(id).map((p) => p.uid)); state.anchorUid = filePages(id)[0]?.uid;
+        syncSelectionUI();
+      };
+      el.querySelectorAll('[data-move]').forEach((b) => { b.onclick = () => moveFileBy(id, Number(b.dataset.move)); });
+      el.querySelector('.file-remove').onclick = () => deletePages(filePages(id).map((p) => p.uid));
+      const head = el.querySelector('.file-head');
+      head.addEventListener('dragstart', (e) => {
+        if (pointerDrag) { e.preventDefault(); return; }
+        dragFileId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/x-pdfwb-file', id);
+        el.classList.add('dragging');
+      });
+      head.addEventListener('dragend', endOrganizerDrag);
+      el.addEventListener('dragover', (e) => {
+        if (!dragFileId || dragFileId === id) return;
+        e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'move';
+        const r = head.getBoundingClientRect(); clearDropMarks();
+        el.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+        scrollDuringDrag(e);
+      });
+      el.addEventListener('drop', (e) => {
+        if (!dragFileId) return; e.preventDefault(); e.stopPropagation();
+        const moving = dragFileId, r = head.getBoundingClientRect(), after = e.clientY >= r.top + r.height / 2;
+        endOrganizerDrag(); moveFile(moving, id, after);
+      });
+      const grid = el.querySelector('.thumb-grid'); fileGrids.set(id, grid);
+      grid.addEventListener('dragover', (e) => {
+        if (!canDropPages(pages[0])) return; e.preventDefault(); e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move'; scrollDuringDrag(e);
+      });
+      grid.addEventListener('drop', (e) => {
+        if (!canDropPages(pages[0])) return; e.preventDefault(); e.stopPropagation();
+        const moving = [...dragUids], last = filePages(id).at(-1);
+        endOrganizerDrag(); movePages(moving, indexOfUid(last.uid) + 1);
+      });
+      list.append(el);
+    });
+  }
+  $('#file-list').addEventListener('dragover', (e) => {
+    if (!dragFileId) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; scrollDuringDrag(e);
+  });
+  $('#file-list').addEventListener('drop', (e) => {
+    if (!dragFileId) return; e.preventDefault();
+    const moving = dragFileId; endOrganizerDrag(); moveFile(moving, null);
+  });
+
+  // Mouse/pen reordering uses pointer capture so selections survive the whole
+  // gesture. Touch keeps native scrolling; the same moves are available via arrows.
+  const organizer = $('#rail-left');
+  function updatePointerDrop() {
+    if (!pointerDrag?.active) return;
+    const { clientX, clientY } = pointerDrag.position;
+    const hit = document.elementFromPoint(clientX, clientY);
+    pointerDrag.drop = null; clearDropMarks();
+    if (!hit || !organizer.contains(hit)) return;
+    if (dragFileId) {
+      const card = hit.closest('.file-card');
+      if (card && card.dataset.srcId !== dragFileId) {
+        const r = card.querySelector('.file-head').getBoundingClientRect(), after = clientY >= r.top + r.height / 2;
+        card.classList.add(after ? 'drop-after' : 'drop-before');
+        pointerDrag.drop = { id: card.dataset.srcId, after };
+      } else if (!card && hit.closest('#file-list, #file-scroll')) pointerDrag.drop = { id: null, after: true };
+    } else {
+      const thumb = hit.closest('.thumb');
+      if (thumb && canDropPages(pageByUid(thumb.dataset.uid))) {
+        const r = thumb.getBoundingClientRect(), after = clientX >= r.left + r.width / 2;
+        thumb.classList.add(after ? 'drop-after' : 'drop-before');
+        pointerDrag.drop = { index: indexOfUid(thumb.dataset.uid) + (after ? 1 : 0) };
+      } else if (!thumb && hit.closest('.thumb-grid')) {
+        const card = hit.closest('.file-card'), last = card ? filePages(card.dataset.srcId).at(-1) : state.pages.at(-1);
+        if (last && canDropPages(last)) pointerDrag.drop = { index: indexOfUid(last.uid) + 1 };
+      }
+    }
+    if (dragBadge) { dragBadge.style.left = clientX + 14 + 'px'; dragBadge.style.top = clientY + 14 + 'px'; }
+  }
+  function finishPointerDrag(apply = false) {
+    const drag = pointerDrag; if (!drag) return;
+    pointerDrag = null; cancelAnimationFrame(drag.raf);
+    const moving = [...dragUids], fileId = dragFileId;
+    endOrganizerDrag();
+    if (organizer.hasPointerCapture(drag.pointerId)) organizer.releasePointerCapture(drag.pointerId);
+    if (!drag.active) return;
+    suppressOrganizerClick = true; setTimeout(() => { suppressOrganizerClick = false; }, 0);
+    if (!apply || !drag.drop) return;
+    if (fileId) moveFile(fileId, drag.drop.id, drag.drop.after);
+    else movePages(moving, drag.drop.index);
+  }
+  organizer.addEventListener('click', (e) => {
+    if (suppressOrganizerClick) { e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
+  organizer.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.pointerType === 'touch' || e.target.closest('button')) return;
+    const item = e.target.closest('.thumb, .file-head'); if (!item) return;
+    e.preventDefault(); item.focus({ preventScroll: true });
+    pointerDrag = { item, pointerId: e.pointerId, x: e.clientX, y: e.clientY, position: e, modifiers: { shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey }, active: false, drop: null };
+    organizer.setPointerCapture(e.pointerId);
+  });
+  organizer.addEventListener('pointermove', (e) => {
+    const drag = pointerDrag; if (!drag || drag.pointerId !== e.pointerId) return;
+    drag.position = e;
+    if (!drag.active) {
+      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
+      if (drag.item.classList.contains('file-head')) {
+        dragFileId = drag.item.closest('.file-card').dataset.srcId; drag.item.closest('.file-card').classList.add('dragging');
+      } else {
+        const u = drag.item.dataset.uid;
+        if (drag.modifiers.shiftKey || !state.selection.has(u)) onThumbClick(u, drag.modifiers);
+        dragUids = orderedSelection();
+        if (!canDropPages(pageByUid(u))) { finishPointerDrag(); toast('Use All pages to move a selection from different files.'); return; }
+        for (const uid of dragUids) thumbEls.get(uid)?.classList.add('dragging');
+      }
+      drag.active = true;
+      dragBadge = document.createElement('div'); dragBadge.className = 'drag-count';
+      const count = dragFileId ? filePages(dragFileId).length : dragUids.length;
+      dragBadge.textContent = dragFileId ? `1 file · ${count} pages` : `${count} page${count === 1 ? '' : 's'}`;
+      document.body.append(dragBadge);
+      const tick = () => { if (pointerDrag !== drag) return; scrollDuringDrag(drag.position); updatePointerDrop(); drag.raf = requestAnimationFrame(tick); };
+      drag.raf = requestAnimationFrame(tick);
+    }
+    e.preventDefault(); updatePointerDrop();
+  });
+  organizer.addEventListener('pointerup', (e) => {
+    if (pointerDrag?.pointerId !== e.pointerId) return;
+    if (!pointerDrag.active && pointerDrag.item.classList.contains('thumb')) {
+      onThumbClick(pointerDrag.item.dataset.uid, pointerDrag.modifiers);
+      suppressOrganizerClick = true; setTimeout(() => { suppressOrganizerClick = false; }, 0);
+    }
+    finishPointerDrag(true);
+  });
+  organizer.addEventListener('pointercancel', () => finishPointerDrag());
+  organizer.addEventListener('lostpointercapture', () => finishPointerDrag());
+  organizer.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pointerDrag) { finishPointerDrag(); e.preventDefault(); } });
 
   // ---------- Search ----------
   async function pageTextInfo(p) {
@@ -1942,12 +2180,12 @@
   $('#pg-reverse').addEventListener('click', reversePages);
   $('#pg-all').addEventListener('click', () => { state.selection = new Set(state.pages.map((p) => p.uid)); syncSelectionUI(); });
   $('#pg-del').addEventListener('click', () => deletePages(targetUids()));
-  thumbScroll.addEventListener('mousedown', () => thumbScroll.focus({ preventScroll: true }));
 
   function showTab(railId, tab) {
     const rail = document.getElementById(railId);
-    $$('.tabs .tab', rail).forEach((t) => t.classList.toggle('active', t.dataset.tab === tab));
+    $$('.tabs .tab', rail).forEach((t) => { t.classList.toggle('active', t.dataset.tab === tab); t.setAttribute('aria-selected', String(t.dataset.tab === tab)); });
     $$('.panel', rail).forEach((pn) => pn.classList.toggle('active', pn.dataset.panel === tab));
+    if (railId === 'rail-left') { if (tab === 'files' || tab === 'pages') rebuildThumbs(); syncSelectionUI(); }
   }
   $$('.rail .tabs .tab').forEach((t) => t.addEventListener('click', () => showTab(t.closest('.rail').id, t.dataset.tab)));
   const narrow = () => window.innerWidth <= 960;
@@ -1978,14 +2216,19 @@
     if (meta && k === 'o') { e.preventDefault(); pickFiles('replace'); return; }
     if (meta && k === 's') { e.preventDefault(); openExport(); return; }
     if (meta && k === 'f') { e.preventDefault(); searchInput.focus(); searchInput.select(); return; }
-    if (meta && k === 'a' && thumbScroll.contains(document.activeElement)) { e.preventDefault(); state.selection = new Set(state.pages.map((p) => p.uid)); syncSelectionUI(); return; }
+    if (meta && k === 'a' && (thumbScroll.contains(document.activeElement) || fileScroll.contains(document.activeElement))) {
+      e.preventDefault();
+      const card = document.activeElement.closest('.file-card');
+      const pages = card ? filePages(card.dataset.srcId) : state.pages;
+      state.selection = new Set(pages.map((p) => p.uid)); state.anchorUid = pages[0]?.uid; syncSelectionUI(); return;
+    }
     if (meta && (e.key === '=' || e.key === '+')) { e.preventDefault(); zoomBy(1.25); return; }
     if (meta && e.key === '-') { e.preventDefault(); zoomBy(1 / 1.25); return; }
     if (meta && e.key === '0') { e.preventDefault(); setZoom('fit-width'); return; }
     if (meta || e.altKey) return;
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (getSelectedAnnot()) { e.preventDefault(); deleteSelectedAnnot(); }
-      else if (thumbScroll.contains(document.activeElement) && state.selection.size) { e.preventDefault(); deletePages(orderedSelection()); }
+      else if ((thumbScroll.contains(document.activeElement) || fileScroll.contains(document.activeElement)) && state.selection.size) { e.preventDefault(); deletePages(orderedSelection()); }
       return;
     }
     const keys = { v: 'select', c: 'textsel', t: 'text', p: 'ink', h: 'highlight', r: 'rect', e: 'ellipse', a: 'arrow', w: 'whiteout' };
@@ -2046,7 +2289,7 @@
   window.addEventListener('beforeunload', (e) => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   // Debug handle (read-only use): window.PDFWorkbench.state, .buildPdf(), .pdfjsLib
-  window.PDFWorkbench = { state, buildPdf, openFiles, saveFile, toast, busy, baseName, showTab, pdfjsLib, version: '1.1.0' };
+  window.PDFWorkbench = { state, buildPdf, openFiles, saveFile, toast, busy, baseName, showTab, pdfjsLib, version: '1.2.0' };
   document.dispatchEvent(new CustomEvent('pdfwb:ready'));
 
   // ---------- Start ----------
