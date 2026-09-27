@@ -893,6 +893,9 @@
     viewer.dataset.tool = tool;
     for (const b of $$('#tool-grid .tool-btn')) b.classList.toggle('active', b.dataset.tool === tool || (tool === 'place' && state.pending && state.pending.kind === 'image' && b.dataset.tool === 'image'));
     if (tool !== 'select') selectAnnot(null);
+    const toolButton = $('#btn-rail-right');
+    toolButton.querySelector('.mobile-only').textContent = tool === 'select' ? 'Tools' : tool === 'place' ? 'Place' : ($('#tool-grid .tool-btn.active')?.textContent.trim() || 'Tools');
+    toolButton.classList.toggle('active', tool !== 'select');
     setHint(HINTS[tool] || '');
     refreshProps();
   }
@@ -1532,7 +1535,13 @@
     if (prev) redrawPage(prev.uid); redrawPage(r.uid);
     $('#search-count').textContent = `${S.index + 1}/${S.results.length}`;
     $$('#result-list .result').forEach((e, k) => e.classList.toggle('active', k === S.index));
-    const act = $('#result-list .result.active'); if (act) act.scrollIntoView({ block: 'nearest' });
+    const act = $('#result-list .result.active');
+    if (act) {
+      const scroller = act.closest('.panel-scroll');
+      const rect = act.getBoundingClientRect(), bounds = scroller.getBoundingClientRect();
+      if (rect.top < bounds.top) scroller.scrollTop -= bounds.top - rect.top;
+      else if (rect.bottom > bounds.bottom) scroller.scrollTop += rect.bottom - bounds.bottom;
+    }
   }
 
   // ---------- Forms ----------
@@ -1679,7 +1688,7 @@
       state.pending = { assetId: as.id, kind };
       setTool('place');
       setHint(kind === 'signature' ? 'Click on a page to place the signature · Esc cancels' : 'Click on a page to place the image · Esc cancels');
-      if (window.innerWidth <= 960) $('#rail-right').classList.remove('open');
+      if (narrow()) closeMobilePanels();
     } catch (e) { toast('The image could not be used: ' + (e.message || e), { error: true }); }
   }
   function trimCanvas(c, pad = 6) {
@@ -2188,15 +2197,61 @@
     if (railId === 'rail-left') { if (tab === 'files' || tab === 'pages') rebuildThumbs(); syncSelectionUI(); }
   }
   $$('.rail .tabs .tab').forEach((t) => t.addEventListener('click', () => showTab(t.closest('.rail').id, t.dataset.tab)));
-  const narrow = () => window.innerWidth <= 960;
+  const mobileLayout = window.matchMedia('(max-width: 960px)');
+  const narrow = () => mobileLayout.matches;
+  const toolbarOptions = $('#toolbar-options');
+  let panelOpener = null;
+  function syncMobilePanels() {
+    const mobile = narrow();
+    const optionsOpen = mobile && toolbarOptions.classList.contains('open');
+    toolbarOptions.inert = mobile && !optionsOpen;
+    $('#btn-more').setAttribute('aria-expanded', String(optionsOpen));
+    let anyOpen = optionsOpen;
+    for (const side of ['left', 'right']) {
+      const rail = $(`#rail-${side}`);
+      const open = mobile ? rail.classList.contains('open') : !app.classList.contains(`no-${side}`);
+      rail.inert = !open;
+      $(`#btn-rail-${side}`).setAttribute('aria-expanded', String(open));
+      anyOpen ||= mobile && open;
+    }
+    $('#panel-backdrop').hidden = !anyOpen;
+  }
+  function closeMobilePanels(restoreFocus = false) {
+    toolbarOptions.classList.remove('open');
+    $('#rail-left').classList.remove('open');
+    $('#rail-right').classList.remove('open');
+    if (restoreFocus && panelOpener) panelOpener.focus({ preventScroll: true });
+    syncMobilePanels();
+  }
   function toggleRail(side) {
-    const rail = $(side === 'left' ? '#rail-left' : '#rail-right');
-    if (narrow()) { const other = $(side === 'left' ? '#rail-right' : '#rail-left'); other.classList.remove('open'); rail.classList.toggle('open'); }
-    else app.classList.toggle(side === 'left' ? 'no-left' : 'no-right');
+    const rail = $(`#rail-${side}`);
+    if (narrow()) {
+      const open = rail.classList.contains('open');
+      closeMobilePanels();
+      panelOpener = $(`#btn-rail-${side}`);
+      rail.classList.toggle('open', !open);
+    } else app.classList.toggle(`no-${side}`);
+    syncMobilePanels();
+  }
+  function openDocumentControls() {
+    if (narrow()) {
+      closeMobilePanels();
+      panelOpener = $('#btn-more');
+      toolbarOptions.classList.add('open');
+      syncMobilePanels();
+    }
   }
   $('#btn-rail-left').addEventListener('click', () => toggleRail('left'));
   $('#btn-rail-right').addEventListener('click', () => toggleRail('right'));
-  viewer.addEventListener('pointerdown', () => { if (narrow()) { $('#rail-left').classList.remove('open'); $('#rail-right').classList.remove('open'); } });
+  $('#btn-more').addEventListener('click', () => {
+    if (toolbarOptions.classList.contains('open')) closeMobilePanels(true);
+    else openDocumentControls();
+  });
+  $('#btn-options-close').addEventListener('click', () => closeMobilePanels(true));
+  $('#panel-backdrop').addEventListener('click', () => closeMobilePanels(true));
+  $$('[data-close-panel]').forEach((b) => b.addEventListener('click', () => closeMobilePanels(true)));
+  mobileLayout.addEventListener('change', () => closeMobilePanels());
+  syncMobilePanels();
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
@@ -2204,6 +2259,7 @@
     const meta = isMac ? e.metaKey : e.ctrlKey;
     if (e.key === 'Escape') {
       if (document.querySelector('dialog[open]')) return;
+      if (narrow() && !$('#panel-backdrop').hidden) { closeMobilePanels(true); return; }
       commitTextEditor();
       if (state.tool !== 'select') setTool('select'); else selectAnnot(null);
       if (typing) t.blur();
@@ -2215,7 +2271,7 @@
     if (meta && k === 'y') { e.preventDefault(); redo(); return; }
     if (meta && k === 'o') { e.preventDefault(); pickFiles('replace'); return; }
     if (meta && k === 's') { e.preventDefault(); openExport(); return; }
-    if (meta && k === 'f') { e.preventDefault(); searchInput.focus(); searchInput.select(); return; }
+    if (meta && k === 'f') { e.preventDefault(); openDocumentControls(); searchInput.focus(); searchInput.select(); return; }
     if (meta && k === 'a' && (thumbScroll.contains(document.activeElement) || fileScroll.contains(document.activeElement))) {
       e.preventDefault();
       const card = document.activeElement.closest('.file-card');
@@ -2289,7 +2345,7 @@
   window.addEventListener('beforeunload', (e) => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   // Debug handle (read-only use): window.PDFWorkbench.state, .buildPdf(), .pdfjsLib
-  window.PDFWorkbench = { state, buildPdf, openFiles, saveFile, toast, busy, baseName, showTab, pdfjsLib, version: '1.2.1' };
+  window.PDFWorkbench = { state, buildPdf, openFiles, saveFile, toast, busy, baseName, showTab, pdfjsLib, version: '1.3.0' };
   document.dispatchEvent(new CustomEvent('pdfwb:ready'));
 
   // ---------- Start ----------

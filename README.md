@@ -12,6 +12,12 @@ python3 -m http.server 8765 --directory pdf-workbench
 
 Then open <http://localhost:8765>. The app starts with a generated three-page sample document so every feature can be tried immediately.
 
+## Mobile
+
+The phone and tablet toolbar keeps Open, Add, Export, Files, Tools, Undo and Redo visible. **More** opens search, zoom presets and page navigation without horizontal toolbar scrolling. **Done**, the shaded area or Escape closes a panel. The Tools label shows the active annotation tool; choose Select to return to normal reading.
+
+The app respects the iPhone safe areas at the top, bottom and landscape edges. Controls have 44px touch targets, form inputs use a readable 16px size, and long dialogs keep their action buttons visible while their contents scroll. Normal PDF scrolling and the existing pinch zoom behavior are preserved.
+
 ## Features
 
 **Read**
