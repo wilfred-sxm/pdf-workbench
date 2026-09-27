@@ -2043,94 +2043,6 @@
   }
 
   // =====================================================================
-  //  Sample document (generated locally so the app opens in a working state)
-  // =====================================================================
-  async function makeSample() {
-    const doc = await PDFDocument.create();
-    const helv = await doc.embedFont(StandardFonts.Helvetica), bold = await doc.embedFont(StandardFonts.HelveticaBold), times = await doc.embedFont(StandardFonts.TimesRoman);
-    const ink = rgb(0.11, 0.13, 0.16), mute = rgb(0.45, 0.5, 0.56), teal = rgb(0.055, 0.49, 0.53), line = rgb(0.8, 0.83, 0.87), fieldBg = rgb(0.975, 0.985, 0.99);
-    const W = 612, H = 792, M = 64;
-    const wrap = (font, text, size, maxW) => {
-      const words = text.split(' '); const lines = []; let cur = '';
-      for (const w of words) { const t = cur ? cur + ' ' + w : w; if (font.widthOfTextAtSize(t, size) > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
-      if (cur) lines.push(cur); return lines;
-    };
-    const header = (page) => {
-      page.drawText('SAMPLE DOCUMENT', { x: M, y: H - 40, size: 8, font: bold, color: teal });
-      const right = 'North Ridge site survey · Field report';
-      page.drawText(right, { x: W - M - helv.widthOfTextAtSize(right, 8), y: H - 40, size: 8, font: helv, color: mute });
-      page.drawLine({ start: { x: M, y: H - 48 }, end: { x: W - M, y: H - 48 }, thickness: 0.5, color: line });
-    };
-    const para = (page, text, y, font = helv, size = 10.5) => {
-      for (const ln of wrap(font, text, size, W - 2 * M)) { page.drawText(ln, { x: M, y, size, font, color: ink }); y -= size * 1.45; }
-      return y - 6;
-    };
-    let p = doc.addPage([W, H]); header(p);
-    p.drawText('Field Report', { x: M, y: H - 120, size: 30, font: bold, color: ink });
-    p.drawText('North Ridge Site Survey — Week 14', { x: M, y: H - 146, size: 14, font: times, color: mute });
-    p.drawText('Prepared by the survey team · 14 September 2026', { x: M, y: H - 168, size: 10, font: helv, color: mute });
-    let y = H - 210;
-    y = para(p, 'Summary', y, bold, 12);
-    y = para(p, 'This report summarises the ground survey completed across the North Ridge parcel between 8 and 12 September. Three of the four transects were walked in full; the eastern transect was cut short on Thursday after the access track washed out. Soil cores were taken at 24 stations and the drainage channel near marker NR-07 was mapped with the total station.', y);
-    y = para(p, 'Conditions', y, bold, 12);
-    y = para(p, 'Weather was dry until Wednesday afternoon. Ground was firm on the upper slopes and saturated in the lower meadow, which limited vehicle access to the northern stations. All stations were reached on foot.', y);
-    y = para(p, 'Stations sampled', y, bold, 12);
-    const rows = [['Station', 'Transect', 'Depth (cm)', 'Notes'], ['NR-01', 'West', '45', 'Compact clay, few stones'], ['NR-04', 'West', '60', 'Water table reached at 55 cm'], ['NR-07', 'Central', '30', 'Drainage channel adjacent'], ['NR-12', 'Central', '50', 'Gravel lens at 35–40 cm'], ['NR-19', 'East', '25', 'Bedrock, core abandoned']];
-    const cols = [M, M + 70, M + 150, M + 240];
-    rows.forEach((r, i) => {
-      const ry = y - i * 18;
-      if (i === 0) p.drawRectangle({ x: M - 6, y: ry - 5, width: W - 2 * M + 12, height: 18, color: rgb(0.93, 0.95, 0.96) });
-      r.forEach((cell, c) => p.drawText(cell, { x: cols[c], y: ry, size: 9.5, font: i === 0 ? bold : helv, color: ink }));
-      p.drawLine({ start: { x: M - 6, y: ry - 5 }, end: { x: W - M + 6, y: ry - 5 }, thickness: 0.4, color: line });
-    });
-    y -= rows.length * 18 + 14;
-    para(p, 'Try it: select some of this text with the Copy text tool, search for “drainage”, highlight a row in the table, or drag this page below page 2 in the Pages panel.', y, times, 10.5);
-
-    p = doc.addPage([W, H]); header(p); y = H - 100;
-    y = para(p, 'Findings', y, bold, 16);
-    y = para(p, '1. The drainage channel at NR-07 has migrated roughly 3 m east since the 2024 survey. The old channel is still visible as a shallow depression and holds standing water after rain.', y);
-    y = para(p, '2. Cores from the western transect show a consistent clay layer between 40 and 60 cm. This matches the geotechnical desk study and supports the proposed foundation approach.', y);
-    y = para(p, '3. The eastern transect needs a return visit once the access track is repaired. Stations NR-20 to NR-24 remain unsampled.', y);
-    y = para(p, 'Recommendations', y, bold, 16);
-    y = para(p, 'Schedule the eastern transect for the first dry week in October. Extend the channel mapping 50 m downstream to capture the new outfall. Share the core logs with the geotechnical consultant before the design review.', y);
-    y -= 24;
-    p.drawRectangle({ x: M, y: y - 160, width: W - 2 * M, height: 160, borderColor: line, borderWidth: 1 });
-    p.drawText('Approval', { x: M + 16, y: y - 26, size: 12, font: bold, color: ink });
-    p.drawText('Reviewed by', { x: M + 16, y: y - 58, size: 9, font: helv, color: mute });
-    p.drawLine({ start: { x: M + 16, y: y - 76 }, end: { x: M + 220, y: y - 76 }, thickness: 0.6, color: ink });
-    p.drawText('Date', { x: M + 260, y: y - 58, size: 9, font: helv, color: mute });
-    p.drawLine({ start: { x: M + 260, y: y - 76 }, end: { x: W - M - 16, y: y - 76 }, thickness: 0.6, color: ink });
-    p.drawText('Signature', { x: M + 16, y: y - 104, size: 9, font: helv, color: mute });
-    p.drawLine({ start: { x: M + 16, y: y - 140 }, end: { x: M + 300, y: y - 140 }, thickness: 0.6, color: ink });
-    p.drawText('Create a signature in the Annotate tab and place it here.', { x: M + 316, y: y - 126, size: 8, font: times, color: mute });
-
-    p = doc.addPage([W, H]); header(p); y = H - 100;
-    y = para(p, 'Sign-off form', y, bold, 16);
-    y = para(p, 'This page has interactive form fields. Fill them in from the Forms tab, then apply the values to the document.', y, times, 10.5);
-    const form = doc.getForm();
-    const field = (label, name, yy, w = 220, x = M) => {
-      p.drawText(label, { x, y: yy + 24, size: 9, font: helv, color: mute });
-      const tf = form.createTextField(name); tf.setText('');
-      tf.addToPage(p, { x, y: yy, width: w, height: 20, borderColor: line, backgroundColor: fieldBg, borderWidth: 1 });
-      return tf;
-    };
-    field('Full name', 'name', y - 40); field('Organisation', 'organisation', y - 40, 220, M + 260);
-    field('Date', 'date', y - 92, 140);
-    const role = form.createDropdown('role'); role.addOptions(['Surveyor', 'Reviewer', 'Project manager', 'Client']); role.select('Reviewer');
-    p.drawText('Role', { x: M + 260, y: y - 68, size: 9, font: helv, color: mute });
-    role.addToPage(p, { x: M + 260, y: y - 92, width: 220, height: 20, borderColor: line, backgroundColor: fieldBg, borderWidth: 1 });
-    const cb1 = form.createCheckBox('cores_reviewed'); cb1.addToPage(p, { x: M, y: y - 142, width: 14, height: 14, borderColor: line, borderWidth: 1 });
-    p.drawText('I have reviewed the core logs', { x: M + 22, y: y - 139, size: 10, font: helv, color: ink });
-    const cb2 = form.createCheckBox('return_visit'); cb2.addToPage(p, { x: M, y: y - 166, width: 14, height: 14, borderColor: line, borderWidth: 1 });
-    p.drawText('A return visit to the eastern transect is approved', { x: M + 22, y: y - 163, size: 10, font: helv, color: ink });
-    const comments = form.createTextField('comments'); comments.enableMultiline(); comments.setText('');
-    p.drawText('Comments', { x: M, y: y - 200, size: 9, font: helv, color: mute });
-    comments.addToPage(p, { x: M, y: y - 306, width: W - 2 * M, height: 98, borderColor: line, backgroundColor: fieldBg, borderWidth: 1 });
-    doc.setTitle('North Ridge Site Survey — Field Report (sample)'); doc.setAuthor('Survey team'); doc.setSubject('Sample document for PDF Workbench'); doc.setKeywords(['sample', 'survey']);
-    return doc.save();
-  }
-
-  // =====================================================================
   //  Wiring
   // =====================================================================
   const app = $('#app');
@@ -2345,20 +2257,12 @@
   window.addEventListener('beforeunload', (e) => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   // Debug handle (read-only use): window.PDFWorkbench.state, .buildPdf(), .pdfjsLib
-  window.PDFWorkbench = { state, buildPdf, openFiles, saveFile, toast, busy, baseName, showTab, pdfjsLib, version: '1.3.1' };
+  window.PDFWorkbench = { state, buildPdf, openFiles, saveFile, toast, busy, baseName, showTab, pdfjsLib, version: '1.3.2' };
   document.dispatchEvent(new CustomEvent('pdfwb:ready'));
 
   // ---------- Start ----------
+  // Render the current state. An empty workspace offers Open PDF; loaded
+  // documents are never replaced by generated example content.
   syncDocPanel(); renderSigList(); updateUndoUI(); setTool('select');
-  busy(true);
-  try {
-    const bytes = await makeSample();
-    const src = await loadSource(bytes, 'North Ridge field report (sample).pdf');
-    state.pages = Array.from({ length: src.pageCount }, (_, i) => makePage(src.id, i));
-    const md = src.metadata || {};
-    state.metadata = { title: md.Title || '', author: md.Author || '', subject: md.Subject || '', keywords: md.Keywords || '' };
-    syncDocPanel(); rebuild(); state.dirty = false;
-    toast('Loaded a sample document. Open your own PDFs with Open, or drop files anywhere.', { ms: 6000 });
-  } catch (e) { console.error(e); rebuild(); toast('The sample document could not be created: ' + (e.message || e), { error: true }); }
-  finally { busy(false); }
+  rebuild();
 })();
