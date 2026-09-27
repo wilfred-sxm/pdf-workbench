@@ -25,7 +25,8 @@
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --r: 6px;
   --topbar-h: 48px;
-  --safe-top: env(safe-area-inset-top, 0px);
+  --ios-edge-clearance: 0px;
+  --safe-top: calc(env(safe-area-inset-top, 0px) + var(--ios-edge-clearance));
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -96,6 +97,23 @@ body {
   overflow: hidden;
   overflow: clip;
   -webkit-font-smoothing: antialiased;
+}
+/* iOS can blur the first part of an installed app even with a zero safe inset.
+   Keep an opaque, non-interactive surface there and put controls below it. */
+.ios-status-surface { display: none; }
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: standalone) and (orientation: portrait) and (max-width: 960px) {
+    :root { --ios-edge-clearance: 24px; }
+    .ios-status-surface {
+      display: block;
+      position: fixed;
+      inset: 0 0 auto;
+      height: var(--safe-top);
+      background: var(--panel);
+      pointer-events: none;
+      z-index: 41;
+    }
+  }
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 button, .thumb, .tab { -webkit-tap-highlight-color: transparent; }
