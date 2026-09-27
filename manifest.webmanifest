@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "PDF Workbench",
+  "short_name": "PDF Workbench",
+  "description": "Read, edit and organize PDFs in your browser.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e7c86",
+  "theme_color": "#0e7c86",
+  "icons": [
+    { "src": "icons/icon-192.png?v=1.2.1", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png?v=1.2.1", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png?v=1.2.1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
